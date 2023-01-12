@@ -58,7 +58,7 @@ list.pack(padx = 10, pady = 10,
           expand = YES, fill = "both")
 
 #Path to files to update revision history
-dirPath = '/Users/nataliedavis/Desktop/RevisionHistory' # MUST BE UPDATED
+dirPath = '<file path, ex. /home/filesToUpdate' # MUST BE UPDATED
 x =[os.listdir(dirPath)]
   
 # tempFileList used to form the file scroll bar window
