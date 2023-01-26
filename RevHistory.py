@@ -21,12 +21,12 @@ if not taskID:
     quit()
 
 author = simpledialog.askstring(title="Revision History Input",
-                                  prompt="What is the author name? Please use the following format <first initial.last name>, example: J.Doe:")
+                                  prompt="What is the author name? Please use the following format <FirstName LastName>, example: Jane Doe")
 if not author:
     quit()
 
 date = simpledialog.askstring(title="Revision History Input",
-                                  prompt="What is the Date? Please use the following format <mm/dd/yyyy>, example: 01/01/2022:")
+                                  prompt="What is the Date? Please use the following format <MM-DD-YYYY>, example: 01-01-2022:")
 if not date:
     quit()
 
@@ -58,7 +58,7 @@ list.pack(padx = 10, pady = 10,
           expand = YES, fill = "both")
 
 #Path to files to update revision history
-dirPath = '<file path, ex. /home/filesToUpdate>' # MUST BE UPDATED
+dirPath = '/Users/nataliedavis/Desktop/RevisionHistory' # MUST BE UPDATED
 x =[os.listdir(dirPath)]
   
 # tempFileList used to form the file scroll bar window
@@ -106,8 +106,26 @@ def addHistory():
     # Closes the window
     filesWindow.destroy()
 
-    # Format the string to put into revision history
-    revString = '* ' + taskID.ljust(15, ' ') + date.ljust(18, ' ') + author.ljust(27, " ") + comment + "\n"
+    #Format the author name to be maximum 15 characters, otherwise clip to FirstInitial.LastName
+    auth = author #Python throws error for local variable referenced before assignment with below logic
+    if len(author) > 15:
+        print('Author name length longer than 15 characters, updating to form <J.Doe>')
+        authorList = author.split()
+        
+        #If lastname is longer than 13 characters
+        if len(authorList[1]) > 13:
+            print('Author last name length longer than 13 characters, clipping to first 13 characters.')
+            auth = authorList[0][0] + "." + authorList[1][0:13]
+            print(auth)
+        else:
+            auth = authorList[0][0] + "." + authorList[1]
+            print(auth)
+
+    # Format the string to put into revision history. It should be in the following format:
+    # <comment character(s)> <1 space> <Task_ID> <6 spaces> <Date> <8 spaces> <Author> <10 spaces> <Description>
+    # Note that the Task_ID defaults to 6 characters, the Date defaults to 10 characters, and the author takes into
+    # account the maximum length of 15 characters
+    revString = taskID.ljust(12, ' ') + date.ljust(18, ' ') + auth.ljust(25, " ") + comment + "\n"
 
     # Open each file and add history
     for curFile in selectedFiles:
@@ -122,15 +140,20 @@ def addHistory():
         # Cycles through the file lines to identify the *</pre> line
         for line in fileLines:
             lineList = line.split()
-            if '*' in line[0]:
-                if '/pre' in lineList[0]:
-                    # Sets the cursor to the beginning of the file, so the whole file is overwritten
-                    openedFile.seek(0)
-                    fileLines.insert(lineNum, revString)
-                    openedFile.writelines(fileLines)
-                    openedFile.truncate()
-                    openedFile.close()
-                    break
+
+            if '/pre' in lineList[0]:
+                # Checks for the characters that start the comment lines by taking the characters before the 
+                # </pre> statement at the end of the comment blocks.
+                clipIndex = lineList[0].index('</pre')
+                commentLine = lineList[0][0:clipIndex] + " " + revString
+
+                # Sets the cursor to the beginning of the file, so the whole file is overwritten
+                openedFile.seek(0)
+                fileLines.insert(lineNum, commentLine)
+                openedFile.writelines(fileLines)
+                openedFile.truncate()
+                openedFile.close()
+                break
 
             lineNum+=1
     
