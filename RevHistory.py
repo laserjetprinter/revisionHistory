@@ -1,6 +1,7 @@
 # RevHistory.py
 # Task_ID        Date              Author                     Description
 # N/A            01/11/2023        N.Davis                    Initial Revision
+# N/A            02/02/2023        R.Yang                     Fixed final button prompting, added defaults and input options
 
 
 from tkinter import *
@@ -8,6 +9,7 @@ import tkinter as tk
 from tkinter import simpledialog
 from tkinter import Scrollbar
 from tkinter import Listbox
+from datetime import datetime
 import os
 
 #Set up tk windows
@@ -16,23 +18,35 @@ root.withdraw()
 
 # User input for revision history comment. If cancel is pressed, the program quits.
 taskID = simpledialog.askstring(title="Revision History Input",
-                                  prompt="What is the Task_ID?: Please use the following format <######>")
+    prompt="What is the Task_ID?: Please use the following format <XX######>, example: DR123456")
 if not taskID:
     quit()
 
 author = simpledialog.askstring(title="Revision History Input",
-                                  prompt="What is the author name? Please use the following format <FirstName LastName>, example: Jane Doe")
+    prompt="What is the author name? Please use the following format <FirstName LastName>, example: Jane Doe")
 if not author:
     quit()
 
 date = simpledialog.askstring(title="Revision History Input",
-                                  prompt="What is the Date? Please use the following format <MM-DD-YYYY>, example: 01-01-2022:")
+    prompt="What is the Date? Please use the following format <MM-DD-YYYY>, example: 01-01-2022", 
+    initialvalue=f"{datetime.today().strftime('%m-%d-%Y')}") # default with today's date
 if not date:
     quit()
 
 comment = simpledialog.askstring(title="Revision History Input",
-                                  prompt="What is the comment?:")
+    prompt="What is the comment?:")
 if not comment:
+    quit()
+
+dirPath = simpledialog.askstring(title="Revision History Input",
+    prompt="What is the file directory after ..\source\gc\ you would like to update? Example: elementManager\display\include",
+    initialvalue= "elementManager\display\src")
+# Add the inputted file path to the sourcepath directory so it will have the username and repo folder
+if dirPath:
+    currentPath = os.getcwd()
+    sourcePath = currentPath.index('\gc')  
+    dirPath = f'{currentPath[0:(sourcePath + 3)]}\{dirPath}'
+if not dirPath:
     quit()
 
 # User selection for files to update
@@ -48,8 +62,7 @@ label = Label(filesWindow,
               font = ("Times New Roman", 15), 
               padx = 10, pady = 10)
 label.pack()
-list = Listbox(filesWindow, selectmode = "multiple", 
-               yscrollcommand = yscrollbar.set)
+list = Listbox(filesWindow, selectmode = "multiple") 
   
 # Widget expands horizontally and 
 # vertically by assigning both to
@@ -57,8 +70,7 @@ list = Listbox(filesWindow, selectmode = "multiple",
 list.pack(padx = 10, pady = 10,
           expand = YES, fill = "both")
 
-#Path to files to update revision history
-dirPath = '/Users/nataliedavis/Desktop/RevisionHistory' # MUST BE UPDATED
+#Path to files to update revision history from input
 x =[os.listdir(dirPath)]
   
 # tempFileList used to form the file scroll bar window
@@ -125,7 +137,7 @@ def addHistory():
     # <comment character(s)> <1 space> <Task_ID> <6 spaces> <Date> <8 spaces> <Author> <10 spaces> <Description>
     # Note that the Task_ID defaults to 6 characters, the Date defaults to 10 characters, and the author takes into
     # account the maximum length of 15 characters
-    revString = taskID.ljust(12, ' ') + date.ljust(18, ' ') + auth.ljust(25, " ") + comment + "\n"
+    revString = taskID.ljust(13, ' ') + date.ljust(12, ' ') + auth.ljust(16, " ") + comment + "\n"
 
     # Open each file and add history
     for curFile in selectedFiles:
@@ -141,11 +153,11 @@ def addHistory():
         for line in fileLines:
             lineList = line.split()
 
-            if '/pre' in lineList[0]:
+            if '/pre' in lineList[1]:
                 # Checks for the characters that start the comment lines by taking the characters before the 
                 # </pre> statement at the end of the comment blocks.
-                clipIndex = lineList[0].index('</pre')
-                commentLine = lineList[0][0:clipIndex] + " " + revString
+                clipSplit = line.split("</pre>")[0]
+                commentLine = clipSplit + revString
 
                 # Sets the cursor to the beginning of the file, so the whole file is overwritten
                 openedFile.seek(0)
