@@ -1,3 +1,11 @@
+#<pre>
+# Revision History:
+# Task_ID     Date              Author                   Description
+# N/A         01-11-2023        Natalie Davis            Initial revision
+# N/A         02-02-2023        Rena Yang                Fixed final button prompting, added defaults and input options
+# N/A         02-08-2023        Natalie Davis            Updated script to use Gtk
+#</pre>
+
 import gi
 from datetime import datetime
 import os
@@ -25,8 +33,11 @@ class MyWindow(Gtk.Window):
         self.userentry_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.outer_box.add(self.userentry_box)
 
+        self.filescroll_box = Gtk.ScrolledWindow()
+        self.outer_box.add(self.filescroll_box)
+
         self.taskid_label = Gtk.Label()
-        self.taskid_label.set_text("What is the Task_ID?: Please use the following format <######>")
+        self.taskid_label.set_text("What is the Task_ID?: Please use the following format <XX######>, example: DR123456")
         self.taskid_label.set_justify(Gtk.Justification.LEFT) 
         self.userentry_box.pack_start(self.taskid_label, True, True, 0)               
 
@@ -74,10 +85,7 @@ class MyWindow(Gtk.Window):
         self.file_label = Gtk.Label()
         self.file_label.set_text("Select the files to add revision history to below:")
         self.file_label.set_justify(Gtk.Justification.LEFT) 
-        self.userentry_box.pack_start(self.file_label, True, True, 0) #Need to figure out how to hide this label until okay is selected
-
-        self.file_listbox = Gtk.ListBox()
-        self.file_listbox.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
+        self.userentry_box.pack_start(self.file_label, True, True, 0) # This label needs to be hidden until okay is clicked, but I haven't been able to find a solution to this yet 
 
         # Setting up the Okay and Cancel buttons
         button_box = Gtk.Box(spacing=6)
@@ -102,14 +110,16 @@ class MyWindow(Gtk.Window):
             # "Okay" more than once
             self.click_tracker = 1
 
-            # Code added by Rena to have the system work on the GC system. Commenting out to work on local system.
+            # Set up file scroll box and scroll bar
+            self.file_listbox = Gtk.ListBox()
+            self.file_listbox.set_selection_mode(Gtk.SelectionMode.MULTIPLE)
+
+            # File path logic for the GC system
             # current_path = os.get_cwd()
             # source_path = current_path.index('\gc')
             # dir_path = f'{current_path[0:(source_path + 3)]}\{self.filepath_entry.get_text()}'
 
-            dir_path = self.filepath_entry.get_text()
-
-            tempfile_list = []
+            dir_path = self.filepath_entry.get_text() # File path for Natalie's system
 
             # Iterate through directory and fill up tempFileList with current files
             for path in os.listdir(dir_path):
@@ -120,9 +130,9 @@ class MyWindow(Gtk.Window):
                     else:
                         self.file_listbox.add(ListBoxRowWithData(path)) #Adds file to scroll bar list
             
-            self.userentry_box.pack_start(self.file_listbox, True, True, 0)
-
+            self.filescroll_box.add(self.file_listbox)
             self.file_listbox.show_all()
+
         else:
             #Close the window and update the files
             # Set the user entry fields equal to variables
@@ -150,7 +160,8 @@ class MyWindow(Gtk.Window):
             # <comment character(s)> <1 space> <Task_ID> <6 spaces> <Date> <8 spaces> <Author> <10 spaces> <Description>
             # Note that the Task_ID defaults to 6 characters, the Date defaults to 10 characters, and the author takes into
             # account the maximum length of 15 characters
-            revString = taskID.ljust(12, ' ') + date.ljust(18, ' ') + auth.ljust(25, " ") + comment + "\n"
+            revString = taskID.ljust(12, ' ') + date.ljust(18, ' ') + auth.ljust(25, " ") + comment + "\n" # Spacing for Natalie's system
+            #revString = taskID.ljust(13, ' ') + date.ljust(12, ' ') + auth.ljust(16, " ") + comment + "\n" # Spacing for GC's system
 
             # Loop through the selected files and add revision history entries
             selected_files = self.file_listbox.get_selected_rows()
@@ -168,6 +179,7 @@ class MyWindow(Gtk.Window):
                 for line in fileLines:
                     lineList = line.split()
 
+                    # Add history for Natalie's system
                     if '/pre' in lineList[0]:
                         # Checks for the characters that start the comment lines by taking the characters before the 
                         # </pre> statement at the end of the comment blocks.
@@ -181,6 +193,21 @@ class MyWindow(Gtk.Window):
                         openedFile.truncate()
                         openedFile.close()
                         break
+
+                    # Add history for GC's system
+                    # if '/pre' in lineList[1]:
+                    #     # Checks for the characters that start the comment lines by taking the characters before the 
+                    #     # </pre> statement at the end of the comment blocks.
+                    #     clipSplit = line.split("</pre>")[0]
+                    #     commentLine = clipSplit + revString
+
+                    #     # Sets the cursor to the beginning of the file, so the whole file is overwritten
+                    #     openedFile.seek(0)
+                    #     fileLines.insert(lineNum, commentLine)
+                    #     openedFile.writelines(fileLines)
+                    #     openedFile.truncate()
+                    #     openedFile.close()
+                    #     break                    
 
                     lineNum+=1
             
